@@ -17,6 +17,7 @@ import { CycleInfo } from '@/lib/detectCycles';
 import { useTreeLayout } from '@/hooks/useTreeLayout';
 import { CrawlNodeData } from '@/lib/buildTree';
 import { isHtmlType } from '@/lib/contentTypeUtils';
+import { LocateFixed } from 'lucide-react';
 
 const nodeTypes = { crawlNode: CrawlNode };
 const edgeTypes = { crawlEdge: CrawlEdge };
@@ -45,6 +46,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
 }) => {
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
   const rfRef = useRef<ReactFlowInstance | null>(null);
+  const [showReturnBtn, setShowReturnBtn] = useState(false);
 
   const recordsByUrl = useMemo(() => {
     const m = new Map<string, CrawlRecord>();
@@ -77,7 +79,6 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
     });
   }, [layoutNodes, diffs, bookmarks, noteUrls, matchingUrls, pulsingNode, highlightedUrls]);
 
-  // Enhance edges with isAsset
   const enhancedEdges = useMemo(() => {
     return layoutEdges.map(edge => {
       const targetRecord = recordsByUrl.get(edge.target);
@@ -114,6 +115,19 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
     }
   }, [flyToNode, nodes, onFlyToDone]);
 
+  const checkViewport = useCallback(() => {
+    if (!rfRef.current || nodes.length === 0) return;
+    const vp = rfRef.current.getViewport();
+    setShowReturnBtn(vp.zoom < 0.15);
+  }, [nodes]);
+
+  const handleReturnToContent = useCallback(() => {
+    if (rfRef.current) {
+      rfRef.current.fitView({ padding: 0.2, duration: 500 });
+      setShowReturnBtn(false);
+    }
+  }, []);
+
   const handleNodeClick: NodeMouseHandler = useCallback((_event, node) => {
     if (node.id === '__VIRTUAL_ROOT__') return;
     onNodeClick(node.id);
@@ -143,7 +157,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
   }, [onContextAddNote]);
 
   return (
-    <div className="h-full w-full" style={{ background: 'var(--bg-canvas)' }}>
+    <div className="h-full w-full relative" style={{ background: 'var(--bg-canvas)' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -155,6 +169,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
         onNodeDoubleClick={handleNodeDoubleClick}
         onInit={(instance) => { rfRef.current = instance; }}
         onPaneContextMenu={handlePaneContextMenu}
+        onMoveEnd={checkViewport}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.05}
@@ -170,6 +185,22 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
           maskColor="rgba(0,0,0,0.85)"
         />
       </ReactFlow>
+
+      {showReturnBtn && (
+        <button
+          onClick={handleReturnToContent}
+          className="absolute top-3 right-3 z-40 flex items-center gap-1.5 rounded-md px-3 py-2 text-[10px] font-bold tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
+          style={{
+            background: 'var(--bg-panel)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+          }}
+        >
+          <LocateFixed size={14} />
+          Return to content
+        </button>
+      )}
     </div>
   );
 };
