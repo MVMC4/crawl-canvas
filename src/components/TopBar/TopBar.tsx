@@ -73,7 +73,19 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Right */}
       <div className="flex items-center gap-1.5">
-        <ToolbarBtn onClick={onToggleFilters} active={filtersOpen} label="Filters">⊟</ToolbarBtn>
+        <button
+          onClick={onToggleFilters}
+          aria-label="Toggle filters"
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center justify-center rounded-l-md py-3 px-0.5 transition-colors"
+          style={{
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--color-border)',
+            borderRight: 'none',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          {filtersOpen ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
         <ToolbarBtn onClick={onToggleBookmarks} label={`Bookmarks (${bookmarkCount})`}>
           ☆ <span className="text-[9px] ml-0.5">{bookmarkCount}</span>
         </ToolbarBtn>
