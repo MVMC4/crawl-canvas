@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { CrawlNodeData } from '@/lib/buildTree';
 import { getContentTypeLabel } from '@/lib/contentTypeUtils';
