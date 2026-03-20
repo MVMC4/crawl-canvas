@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { EdgeProps, getBezierPath, EdgeLabelRenderer } from 'reactflow';
+import { EdgeProps, getStraightPath, EdgeLabelRenderer } from 'reactflow';
 
 interface CrawlEdgeData {
   sourceTag?: string;
@@ -8,26 +8,16 @@ interface CrawlEdgeData {
 }
 
 const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
-  id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected,
+  id, sourceX, sourceY, targetX, targetY, data, selected,
 }) => {
-  const [edgePath, labelX, labelY] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
+  const [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
   const isCircular = data?.isCircular;
-  const tag = data?.sourceTag || '';
 
-  let strokeDasharray: string | undefined;
-  let strokeWidth = 1;
-
-  if (isCircular) {
-    strokeWidth = 1.5;
-  } else if (tag === 'a') {
-    strokeWidth = 1.5;
-  } else if (tag === 'link') {
-    strokeDasharray = '6 3';
-  } else if (tag === 'script' || tag === 'img') {
-    strokeDasharray = '2 4';
-  }
-
-  const color = isCircular ? 'var(--color-accent-error)' : selected ? 'var(--color-edge-hover)' : 'var(--color-edge)';
+  const color = isCircular
+    ? 'var(--color-accent-error)'
+    : selected
+      ? 'var(--color-edge-hover)'
+      : 'var(--color-edge)';
 
   return (
     <>
@@ -36,10 +26,10 @@ const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
         d={edgePath}
         fill="none"
         stroke={color}
-        strokeWidth={strokeWidth}
-        strokeDasharray={strokeDasharray}
+        strokeWidth={isCircular ? 1 : 0.5}
+        strokeOpacity={isCircular ? 0.8 : 0.25}
         className="react-flow__edge-path"
-        style={{ transition: 'stroke 120ms' }}
+        style={{ transition: 'stroke 150ms, stroke-opacity 150ms' }}
       />
       {isCircular && (
         <EdgeLabelRenderer>
@@ -47,9 +37,9 @@ const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-              fontSize: 9,
+              fontSize: 8,
               fontFamily: "'Space Mono', monospace",
-              padding: '1px 4px',
+              padding: '1px 3px',
               borderRadius: 2,
               background: 'var(--bg-panel-secondary)',
               color: 'var(--color-accent-error)',
@@ -57,7 +47,7 @@ const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
               pointerEvents: 'none',
             }}
           >
-            ⟳ Circular
+            ⟳
           </div>
         </EdgeLabelRenderer>
       )}

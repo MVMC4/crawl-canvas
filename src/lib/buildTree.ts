@@ -1,8 +1,7 @@
 import { CrawlRecord } from '@/types/crawl';
 import { CycleInfo } from './detectCycles';
-import { isAssetType } from './contentTypeUtils';
 import { Node, Edge } from 'reactflow';
-import dagre from '@dagrejs/dagre';
+import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, SimulationNodeDatum, SimulationLinkDatum } from 'd3-force';
 
 export interface CrawlNodeData {
   record: CrawlRecord;
@@ -11,12 +10,27 @@ export interface CrawlNodeData {
   hiddenDescendants: number;
 }
 
+interface SimNode extends SimulationNodeDatum {
+  id: string;
+  record: CrawlRecord;
+  childCount: number;
+  isCollapsed: boolean;
+  hiddenDescendants: number;
+}
+
+interface SimLink extends SimulationLinkDatum<SimNode> {
+  id: string;
+  sourceTag: string;
+  sourceText: string;
+  isCircular: boolean;
+}
+
 export function buildNodesAndEdges(
   records: CrawlRecord[],
   cycles: CycleInfo[],
   maxDepth: number,
   collapsedNodes: Set<string>,
-  direction: 'TB' | 'LR' = 'TB'
+  _direction: 'TB' | 'LR' = 'TB'
 ): { nodes: Node<CrawlNodeData>[]; edges: Edge[] } {
   const cycleEdgeSet = new Set(cycles.map(c => `${c.sourceUrl}__${c.targetUrl}`));
   const urlToRecord = new Map<string, CrawlRecord>();
@@ -37,7 +51,7 @@ export function buildNodesAndEdges(
   const roots = records.filter(r => r.depth === 0 || r.discovered_on === null);
   const hasVirtualRoot = roots.length > 1;
 
-  // Count descendants recursively
+  // Count descendants
   const descendantCount = new Map<string, number>();
   function countDescendants(url: string): number {
     if (descendantCount.has(url)) return descendantCount.get(url)!;
@@ -51,9 +65,9 @@ export function buildNodesAndEdges(
   }
   for (const r of records) countDescendants(r.url);
 
-  // Determine which nodes are visible
+  // Determine visible nodes
   const visibleUrls = new Set<string>();
-  function addVisible(url: string, depth: number) {
+  function addVisible(url: string) {
     const record = urlToRecord.get(url);
     if (!record) return;
     if (record.depth > maxDepth) return;
@@ -61,95 +75,62 @@ export function buildNodesAndEdges(
     if (collapsedNodes.has(url)) return;
     const children = childrenMap.get(url) || [];
     for (const c of children) {
-      addVisible(c.url, depth + 1);
+      addVisible(c.url);
     }
   }
 
   if (hasVirtualRoot) {
     visibleUrls.add('__VIRTUAL_ROOT__');
-    for (const r of roots) addVisible(r.url, 0);
+    for (const r of roots) addVisible(r.url);
   } else if (roots.length === 1) {
-    addVisible(roots[0].url, 0);
+    addVisible(roots[0].url);
   }
 
-  // Build dagre graph
-  const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  const nodeWidth = 180;
-  const nodeHeight = 56;
-  const assetSize = 62;
-
-  // Add nodes
-  const nodes: Node<CrawlNodeData>[] = [];
-  const edges: Edge[] = [];
+  // Build simulation nodes
+  const simNodes: SimNode[] = [];
+  const simLinks: SimLink[] = [];
 
   if (hasVirtualRoot) {
-    g.setNode('__VIRTUAL_ROOT__', { width: 100, height: 40 });
-    nodes.push({
+    simNodes.push({
       id: '__VIRTUAL_ROOT__',
-      type: 'crawlNode',
-      position: { x: 0, y: 0 },
-      data: {
-        record: {
-          url: '__VIRTUAL_ROOT__',
-          depth: -1,
-          status_code: 200,
-          content_type: 'text/html',
-          discovered_on: null,
-          url_chain: [],
-          source: { tag: '', attribute: '', text: '', parent_tag: '', parent_id: null, parent_class: '', context_snippet: '' },
-          page_title: 'ROOT',
-          outbound_links: 0,
-          error: null,
-        },
-        childCount: roots.length,
-        isCollapsed: false,
-        hiddenDescendants: 0,
+      record: {
+        url: '__VIRTUAL_ROOT__', depth: -1, status_code: 200, content_type: 'text/html',
+        discovered_on: null, url_chain: [],
+        source: { tag: '', attribute: '', text: '', parent_tag: '', parent_id: null, parent_class: '', context_snippet: '' },
+        page_title: 'ROOT', outbound_links: 0, error: null,
       },
+      childCount: roots.length,
+      isCollapsed: false,
+      hiddenDescendants: 0,
     });
   }
 
   for (const url of visibleUrls) {
     if (url === '__VIRTUAL_ROOT__') continue;
     const record = urlToRecord.get(url)!;
-    const isAsset = isAssetType(record.content_type);
-    const w = isAsset ? assetSize : nodeWidth;
-    const h = isAsset ? assetSize : nodeHeight;
-    g.setNode(url, { width: w, height: h });
-
     const isCollapsed = collapsedNodes.has(url);
     const children = childrenMap.get(url) || [];
-    let hiddenDesc = 0;
-    if (isCollapsed) {
-      hiddenDesc = descendantCount.get(url) || 0;
-    }
-
-    nodes.push({
+    simNodes.push({
       id: url,
-      type: 'crawlNode',
-      position: { x: 0, y: 0 },
-      data: {
-        record,
-        childCount: children.length,
-        isCollapsed,
-        hiddenDescendants: hiddenDesc,
-      },
+      record,
+      childCount: children.length,
+      isCollapsed,
+      hiddenDescendants: isCollapsed ? (descendantCount.get(url) || 0) : 0,
     });
   }
 
-  // Add edges
+  // Build links
   if (hasVirtualRoot) {
     for (const r of roots) {
       if (visibleUrls.has(r.url)) {
-        edges.push({
+        simLinks.push({
           id: `__VIRTUAL_ROOT__->${r.url}`,
           source: '__VIRTUAL_ROOT__',
           target: r.url,
-          type: 'crawlEdge',
+          sourceTag: '',
+          sourceText: '',
+          isCircular: false,
         });
-        g.setEdge('__VIRTUAL_ROOT__', r.url);
       }
     }
   }
@@ -158,22 +139,22 @@ export function buildNodesAndEdges(
     if (!r.discovered_on) continue;
     if (!visibleUrls.has(r.url) || !visibleUrls.has(r.discovered_on)) continue;
     const isCircular = cycleEdgeSet.has(`${r.discovered_on}__${r.url}`);
-    if (isCircular) continue; // skip cycle edges from tree layout
-
-    edges.push({
+    if (isCircular) continue;
+    simLinks.push({
       id: `${r.discovered_on}->${r.url}`,
       source: r.discovered_on,
       target: r.url,
-      type: 'crawlEdge',
-      data: { sourceTag: r.source.tag, sourceText: r.source.text, isCircular: false },
+      sourceTag: r.source.tag,
+      sourceText: r.source.text,
+      isCircular: false,
     });
-    g.setEdge(r.discovered_on, r.url);
   }
 
-  // Add cycle edges visually but not to dagre
+  // Add cycle edges (visual only)
+  const cycleEdges: Edge[] = [];
   for (const c of cycles) {
     if (visibleUrls.has(c.sourceUrl) && visibleUrls.has(c.targetUrl)) {
-      edges.push({
+      cycleEdges.push({
         id: `cycle:${c.sourceUrl}->${c.targetUrl}`,
         source: c.sourceUrl,
         target: c.targetUrl,
@@ -184,18 +165,59 @@ export function buildNodesAndEdges(
     }
   }
 
-  // Run dagre layout
-  dagre.layout(g);
+  // Create node index map for d3-force
+  const nodeById = new Map(simNodes.map((n, i) => [n.id, i]));
+  const d3Links = simLinks
+    .filter(l => {
+      const sId = typeof l.source === 'string' ? l.source : (l.source as SimNode).id;
+      const tId = typeof l.target === 'string' ? l.target : (l.target as SimNode).id;
+      return nodeById.has(sId) && nodeById.has(tId);
+    })
+    .map(l => ({
+      source: typeof l.source === 'string' ? l.source : (l.source as SimNode).id,
+      target: typeof l.target === 'string' ? l.target : (l.target as SimNode).id,
+    }));
 
-  for (const node of nodes) {
-    const dagreNode = g.node(node.id);
-    if (dagreNode) {
-      node.position = {
-        x: dagreNode.x - (dagreNode.width || 0) / 2,
-        y: dagreNode.y - (dagreNode.height || 0) / 2,
-      };
-    }
-  }
+  // Run force simulation
+  const nodeCount = simNodes.length;
+  const chargeStrength = nodeCount > 500 ? -30 : nodeCount > 100 ? -60 : -120;
+  const linkDistance = nodeCount > 500 ? 40 : nodeCount > 100 ? 60 : 80;
 
-  return { nodes, edges };
+  const simulation = forceSimulation(simNodes)
+    .force('link', forceLink<SimNode, SimulationLinkDatum<SimNode>>(d3Links).id(d => d.id).distance(linkDistance).strength(0.4))
+    .force('charge', forceManyBody().strength(chargeStrength))
+    .force('center', forceCenter(0, 0))
+    .force('collide', forceCollide<SimNode>(16))
+    .stop();
+
+  // Tick to convergence
+  const ticks = Math.min(300, Math.max(100, Math.ceil(nodeCount * 0.5)));
+  for (let i = 0; i < ticks; i++) simulation.tick();
+
+  // Convert to React Flow nodes and edges
+  const nodes: Node<CrawlNodeData>[] = simNodes.map(sn => ({
+    id: sn.id,
+    type: 'crawlNode',
+    position: { x: sn.x || 0, y: sn.y || 0 },
+    data: {
+      record: sn.record,
+      childCount: sn.childCount,
+      isCollapsed: sn.isCollapsed,
+      hiddenDescendants: sn.hiddenDescendants,
+    },
+  }));
+
+  const edges: Edge[] = simLinks.map(sl => {
+    const sId = typeof sl.source === 'string' ? sl.source : (sl.source as SimNode).id;
+    const tId = typeof sl.target === 'string' ? sl.target : (sl.target as SimNode).id;
+    return {
+      id: sl.id,
+      source: sId,
+      target: tId,
+      type: 'crawlEdge',
+      data: { sourceTag: sl.sourceTag, sourceText: sl.sourceText, isCircular: sl.isCircular },
+    };
+  });
+
+  return { nodes, edges: [...edges, ...cycleEdges] };
 }
