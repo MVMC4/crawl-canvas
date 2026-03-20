@@ -79,6 +79,7 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
             onUpdateDiff={onUpdateDiff}
             onToggleBookmark={onToggleBookmark}
             onNavigateToNode={onNavigateToNode}
+            onGoToNode={onGoToNode}
           />
         ) : tab === 'data' ? (
           <DataTab record={record} diff={diff} onUpdateDiff={onUpdateDiff} onRevertNode={onRevertNode} />
