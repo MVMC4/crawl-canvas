@@ -26,7 +26,7 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
 
   return (
     <div
-      className="fixed right-0 top-0 h-full overflow-y-auto transition-transform duration-250 z-40"
+      className="absolute right-0 top-0 h-full overflow-y-auto transition-transform duration-250 z-40"
       style={{
         width: 380,
         background: 'var(--bg-panel)',
