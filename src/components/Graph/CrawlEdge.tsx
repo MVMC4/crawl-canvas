@@ -5,6 +5,7 @@ interface CrawlEdgeData {
   sourceTag?: string;
   sourceText?: string;
   isCircular?: boolean;
+  isAsset?: boolean;
 }
 
 const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
@@ -12,6 +13,7 @@ const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
 }) => {
   const [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
   const isCircular = data?.isCircular;
+  const isAsset = data?.isAsset;
 
   const color = isCircular
     ? 'var(--color-accent-error)'
