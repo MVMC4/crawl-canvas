@@ -119,7 +119,16 @@ const Index: React.FC = () => {
   }, []);
 
   if (!loaded) {
-    return <LandingScreen onFileLoad={loadFile} loading={loading} error={error} />;
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-canvas)' }}>
+        <div className="text-center">
+          <div className="mb-4 h-10 w-10 mx-auto animate-pulse rounded-sm" style={{ background: 'var(--color-border-bright)' }} />
+          <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+            {error ? error : 'Loading crawl data…'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
