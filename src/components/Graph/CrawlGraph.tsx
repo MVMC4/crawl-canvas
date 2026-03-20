@@ -42,7 +42,7 @@ interface CrawlGraphProps {
 
 export const CrawlGraph: React.FC<CrawlGraphProps> = ({
   records, cycles, diffs, bookmarks, noteUrls, matchingUrls,
-  direction, maxDepth, onNodeClick, pulsingNode, flyToNode, onFlyToDone,
+  direction, maxDepth, onNodeClick, selectedUrl, pulsingNode, flyToNode, onFlyToDone,
   onContextAddNote, highlightedUrls,
 }) => {
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
