@@ -79,7 +79,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
         },
       };
     });
-  }, [layoutNodes, diffs, bookmarks, noteUrls, matchingUrls, pulsingNode, highlightedUrls]);
+  }, [layoutNodes, diffs, bookmarks, noteUrls, matchingUrls, pulsingNode, highlightedUrls, selectedUrl]);
 
   const enhancedEdges = useMemo(() => {
     return layoutEdges.map(edge => {
