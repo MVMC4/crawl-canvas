@@ -66,6 +66,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
       const isHighlight = highlightedUrls ? highlightedUrls.has(url) : false;
       return {
         ...node,
+        selected: url === selectedUrl,
         data: {
           ...nd,
           nickname: diff?.nickname,
