@@ -91,7 +91,7 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
   const extra = (props as unknown as { data: CrawlNodeData & ExtraProps }).data as CrawlNodeData & ExtraProps;
   const { record } = data;
   const label = getNodeLabel(data, extra.nickname);
-  const color = getNodeColor(record.status_code);
+  const color = getNodeColor(record.status_code, record.depth);
   const r = getNodeRadius(data);
   const diameter = r * 2;
   const isVirtualRoot = record.url === '__VIRTUAL_ROOT__';
