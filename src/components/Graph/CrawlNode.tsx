@@ -96,6 +96,15 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
   const isVirtualRoot = record.url === '__VIRTUAL_ROOT__';
   const shape = getNodeShape(record.content_type);
   const isHighlighted = extra.isHighlighted || false;
+  const [hovered, setHovered] = useState(false);
+
+  let shortPath = '';
+  try {
+    const u = new URL(record.url);
+    shortPath = u.pathname;
+  } catch {
+    shortPath = record.url;
+  }
 
   return (
     <div
@@ -105,6 +114,8 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         width: diameter,
         height: diameter,
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <Handle
         type="target"
