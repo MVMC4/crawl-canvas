@@ -261,6 +261,7 @@ const Index: React.FC = () => {
           record={selectedRecord}
           diff={selectedUrl ? diffs[selectedUrl] : undefined}
           isBookmarked={selectedUrl ? isBookmarked(selectedUrl) : false}
+          isHighlighted={selectedUrl && highlightedUrls ? highlightedUrls.has(selectedUrl) : false}
           onClose={() => setSelectedUrl(null)}
           onUpdateDiff={(url, diff) => { updateDiff(url, diff); setSavedRecently(true); setTimeout(() => setSavedRecently(false), 2000); }}
           onToggleBookmark={toggleBookmark}

@@ -6,6 +6,7 @@ interface NodeSidePanelProps {
   record: CrawlRecord | null;
   diff: NodeDiff | undefined;
   isBookmarked: boolean;
+  isHighlighted?: boolean;
   onClose: () => void;
   onUpdateDiff: (url: string, diff: NodeDiff) => void;
   onToggleBookmark: (url: string) => void;
@@ -14,7 +15,7 @@ interface NodeSidePanelProps {
 }
 
 export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
-  record, diff, isBookmarked, onClose, onUpdateDiff, onToggleBookmark, onRevertNode, onNavigateToNode,
+  record, diff, isBookmarked, isHighlighted, onClose, onUpdateDiff, onToggleBookmark, onRevertNode, onNavigateToNode,
 }) => {
   const [tab, setTab] = useState<'meta' | 'data' | 'json'>('meta');
   const isOpen = record !== null;
@@ -36,7 +37,7 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex-1 overflow-hidden">
-          <p className="truncate text-[10px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{url}</p>
+          <p className="truncate text-[10px] font-bold" style={{ color: isHighlighted ? '#22c55e' : 'var(--color-text-primary)' }}>{url}</p>
         </div>
         <div className="flex items-center gap-1.5 ml-2">
           <button

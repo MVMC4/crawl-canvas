@@ -1,7 +1,6 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { CrawlNodeData } from '@/lib/buildTree';
-import { getContentTypeLabel } from '@/lib/contentTypeUtils';
 
 interface ExtraProps {
   isBookmarked?: boolean;
@@ -26,7 +25,8 @@ function getNodeLabel(data: CrawlNodeData, nickname?: string): string {
   }
 }
 
-function getNodeColor(statusCode: number | null): string {
+function getNodeColor(statusCode: number | null, depth?: number): string {
+  if (depth === 0) return '#a855f7';
   if (statusCode === null) return 'var(--color-node-error-text)';
   if (statusCode >= 500) return 'var(--color-accent-error)';
   if (statusCode === 404) return 'var(--color-node-404-border)';
@@ -90,21 +90,12 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
   const extra = (props as unknown as { data: CrawlNodeData & ExtraProps }).data as CrawlNodeData & ExtraProps;
   const { record } = data;
   const label = getNodeLabel(data, extra.nickname);
-  const color = getNodeColor(record.status_code);
+  const color = getNodeColor(record.status_code, record.depth);
   const r = getNodeRadius(data);
   const diameter = r * 2;
   const isVirtualRoot = record.url === '__VIRTUAL_ROOT__';
   const shape = getNodeShape(record.content_type);
   const isHighlighted = extra.isHighlighted || false;
-  const [hovered, setHovered] = useState(false);
-
-  let shortPath = '';
-  try {
-    const u = new URL(record.url);
-    shortPath = u.pathname;
-  } catch {
-    shortPath = record.url;
-  }
 
   return (
     <div
@@ -114,8 +105,6 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         width: diameter,
         height: diameter,
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <Handle
         type="target"
@@ -186,18 +175,18 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         </div>
       )}
 
-      {/* Label on hover or when selected/seed */}
+      {/* Label — only for selected or seed nodes */}
       <div
         className={`absolute whitespace-nowrap pointer-events-none ${
-          selected || record.depth === 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        } transition-opacity duration-150`}
+          selected || record.depth === 0 ? 'opacity-100' : 'opacity-0'
+        }`}
         style={{
           top: diameter + 3,
           left: '50%',
           transform: 'translateX(-50%)',
           fontSize: 8,
           fontFamily: "'Space Mono', monospace",
-          color: isHighlighted ? '#22c55e' : selected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+          color: isHighlighted ? '#22c55e' : record.depth === 0 ? '#a855f7' : selected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
           textAlign: 'center',
           maxWidth: 100,
           overflow: 'hidden',
@@ -206,42 +195,9 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
       >
         {isVirtualRoot ? 'ROOT' : label}
         {record.depth === 0 && !isVirtualRoot && (
-          <span style={{ marginLeft: 3, fontSize: 6, letterSpacing: '0.1em', color: 'var(--color-text-secondary)' }}>SEED</span>
+          <span style={{ marginLeft: 3, fontSize: 6, letterSpacing: '0.1em', color: '#a855f7' }}>SEED</span>
         )}
       </div>
-
-      {/* Hover tooltip */}
-      {hovered && !isVirtualRoot && (
-        <div
-          className="absolute pointer-events-none z-50"
-          style={{
-            top: -8,
-            left: diameter + 8,
-            minWidth: 180,
-            maxWidth: 260,
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 4,
-            padding: '6px 8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          }}
-        >
-          <p className="text-[8px] font-bold truncate" style={{ color: 'var(--color-text-primary)', fontFamily: "'Space Mono', monospace" }}>
-            {record.url}
-          </p>
-          <div className="flex gap-3 mt-1">
-            <span className="text-[7px]" style={{ color: 'var(--color-text-secondary)' }}>
-              Type: <span style={{ color: 'var(--color-text-primary)' }}>{getContentTypeLabel(record.content_type)}</span>
-            </span>
-            <span className="text-[7px]" style={{ color: 'var(--color-text-secondary)' }}>
-              Status: <span style={{ color: getNodeColor(record.status_code) }}>{record.status_code ?? 'N/A'}</span>
-            </span>
-          </div>
-          <p className="text-[7px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-            Path: {shortPath}
-          </p>
-        </div>
-      )}
     </div>
   );
 };
