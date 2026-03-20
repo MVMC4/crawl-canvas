@@ -26,7 +26,8 @@ function getNodeLabel(data: CrawlNodeData, nickname?: string): string {
   }
 }
 
-function getNodeColor(statusCode: number | null): string {
+function getNodeColor(statusCode: number | null, depth?: number): string {
+  if (depth === 0) return '#a855f7';
   if (statusCode === null) return 'var(--color-node-error-text)';
   if (statusCode >= 500) return 'var(--color-accent-error)';
   if (statusCode === 404) return 'var(--color-node-404-border)';
