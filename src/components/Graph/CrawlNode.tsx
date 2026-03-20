@@ -105,8 +105,6 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         width: diameter,
         height: diameter,
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <Handle
         type="target"
