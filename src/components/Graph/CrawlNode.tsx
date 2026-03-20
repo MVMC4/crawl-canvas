@@ -114,6 +114,7 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
   const isVirtualRoot = record.url === '__VIRTUAL_ROOT__';
   const shape = getNodeShape(record.content_type);
   const isHighlighted = extra.isHighlighted || false;
+  const [hovered, setHovered] = useState(false);
 
   let shortPath = '';
   try {
@@ -125,6 +126,12 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
 
   const showTooltip = !isVirtualRoot;
 
+  // Determine tooltip title color based on hover/select state
+  const isActive = hovered || !!selected;
+  const titleColor = isActive
+    ? (isHighlighted ? '#a855f7' : '#22c55e')
+    : isHighlighted ? '#22c55e' : 'var(--color-text-primary)';
+
   return (
     <div
       className={`relative group ${extra.isPulsing ? 'animate-node-pulse' : ''}`}
@@ -133,6 +140,8 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         width: diameter,
         height: diameter,
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <Handle
         type="target"
@@ -150,7 +159,7 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         className="flex items-center justify-center"
         style={{ width: diameter, height: diameter }}
       >
-        <div style={getShapeStyle(shape, diameter, color, !!selected, !!extra.hasEdits, isHighlighted)} />
+        <div style={getShapeStyle(shape, diameter, color, !!selected, !!extra.hasEdits, isHighlighted, hovered)} />
       </div>
 
       {/* Bookmark star */}
