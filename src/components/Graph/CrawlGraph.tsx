@@ -108,7 +108,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
         rfRef.current.setCenter(
           node.position.x + 90,
           node.position.y + 28,
-          { zoom: 2.0, duration: 600 }
+          { zoom: 3.0, duration: 600 }
         );
         onFlyToDone();
       }
