@@ -34,21 +34,6 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
 
   if (!open) return null;
 
-  // Position bookmarks in a loose cluster around center
-  const positioned = useMemo(() => {
-    const cx = 0;
-    const cy = 0;
-    return bookmarks.map((url, i) => {
-      const angle = (i / Math.max(bookmarks.length, 1)) * Math.PI * 2 + Math.PI / 6;
-      const radius = 60 + (i % 3) * 40;
-      return {
-        url,
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
-      };
-    });
-  }, [bookmarks]);
-
   return (
     <div className="absolute inset-0 z-20" style={{ background: 'var(--bg-canvas)' }}>
       {/* Header */}
