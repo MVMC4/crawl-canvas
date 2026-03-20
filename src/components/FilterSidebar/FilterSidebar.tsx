@@ -89,7 +89,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({ open, onToggle, fi
               <input
                 type="range"
                 min={0}
-                max={maxDepthInData}
+                max={10}
                 value={filters.depthMin}
                 onChange={(e) => onUpdate({ depthMin: Number(e.target.value) })}
                 className="flex-1"
