@@ -6,6 +6,7 @@ import { NodeSidePanel } from '@/components/SidePanel/NodeSidePanel';
 import { FilterSidebar } from '@/components/FilterSidebar/FilterSidebar';
 import { BookmarksPanel } from '@/components/BookmarksPanel/BookmarksPanel';
 import { ProjectMetaModal } from '@/components/ProjectMetaModal/ProjectMetaModal';
+import { BottomDock } from '@/components/BottomDock/BottomDock';
 import { useCrawlData } from '@/hooks/useCrawlData';
 import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
 import { useBookmarks } from '@/hooks/useBookmarks';
@@ -30,7 +31,6 @@ const Index: React.FC = () => {
 
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [direction, setDirection] = useState<'TB' | 'LR'>('TB');
   const [maxDepth, setMaxDepth] = useState(2);
@@ -39,6 +39,7 @@ const Index: React.FC = () => {
   const [flyToNode, setFlyToNode] = useState<string | null>(null);
   const [savedRecently, setSavedRecently] = useState(false);
   const [projectMeta, setProjectMeta] = useState<ProjectMeta>(() => getProjectMeta() || { name: '', description: '', auditNotes: '', crawlDate: '' });
+  const [activeView, setActiveView] = useState<'graph' | 'bookmarks'>('graph');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedRecord = useMemo(() => records.find(r => r.url === selectedUrl) || null, [records, selectedUrl]);
@@ -51,7 +52,6 @@ const Index: React.FC = () => {
     return records.filter(r => r.depth <= maxDepth && matchingUrls.has(r.url)).length;
   }, [records, maxDepth, matchingUrls]);
 
-  // Search filtering + highlight tracking
   const searchMatchingUrls = useMemo(() => {
     if (!searchQuery.trim()) return matchingUrls;
     const q = searchQuery.toLowerCase();
@@ -74,7 +74,6 @@ const Index: React.FC = () => {
     return searchMatches;
   }, [searchQuery, records, diffs, matchingUrls]);
 
-  // Green highlighted URLs = search matches + filter matches
   const highlightedUrls = useMemo(() => {
     const set = new Set<string>();
     if (searchQuery.trim() && searchMatchingUrls) {
@@ -87,7 +86,7 @@ const Index: React.FC = () => {
   }, [searchQuery, searchMatchingUrls, hasActiveFilters, matchingUrls]);
 
   const navigateToNode = useCallback((url: string) => {
-    setBookmarksOpen(false);
+    setActiveView('graph');
     setFlyToNode(url);
     setPulsingNode(url);
     setSelectedUrl(url);
@@ -117,7 +116,6 @@ const Index: React.FC = () => {
     addNote(x, y);
   }, [addNote]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -126,7 +124,7 @@ const Index: React.FC = () => {
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();
-        setBookmarksOpen(p => !p);
+        setActiveView(v => v === 'bookmarks' ? 'graph' : 'bookmarks');
       }
     };
     window.addEventListener('keydown', handler);
@@ -137,7 +135,6 @@ const Index: React.FC = () => {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-canvas)' }}>
         <div className="text-center space-y-4">
-          {/* Animated loading indicator */}
           <div className="flex items-center justify-center gap-1.5">
             {[0, 1, 2, 3, 4].map(i => (
               <div
@@ -178,7 +175,7 @@ const Index: React.FC = () => {
     <div className="flex flex-col h-screen transition-theme" style={{ background: 'var(--bg-canvas)' }}>
       <TopBar
         projectName={projectMeta.name}
-        onToggleBookmarks={() => { setBookmarksOpen(p => !p); setFiltersOpen(false); }}
+        onToggleBookmarks={() => setActiveView(v => v === 'bookmarks' ? 'graph' : 'bookmarks')}
         onOpenInfo={() => setInfoOpen(true)}
         onToggleDirection={() => setDirection(d => d === 'TB' ? 'LR' : 'TB')}
         onToggleTheme={toggleTheme}
@@ -201,7 +198,7 @@ const Index: React.FC = () => {
         savedRecently={savedRecently}
       />
 
-      {deeperCount > 0 && (
+      {deeperCount > 0 && activeView === 'graph' && (
         <div className="flex items-center justify-center py-1" style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--color-border)' }}>
           <button
             onClick={() => setMaxDepth(maxDepthInData)}
@@ -221,41 +218,48 @@ const Index: React.FC = () => {
       )}
 
       <div className="flex-1 relative overflow-hidden">
-        <CrawlGraph
-          records={records}
-          cycles={cycles}
-          diffs={diffs}
-          bookmarks={bookmarks}
-          noteUrls={noteUrls}
-          matchingUrls={searchQuery.trim() ? searchMatchingUrls : matchingUrls}
-          direction={direction}
-          maxDepth={maxDepth}
-          onNodeClick={(url) => setSelectedUrl(url)}
-          pulsingNode={pulsingNode}
-          flyToNode={flyToNode}
-          onFlyToDone={() => setFlyToNode(null)}
-          onContextAddNote={handleContextAddNote}
-          highlightedUrls={highlightedUrls}
-        />
+        {/* Graph view */}
+        <div className={activeView === 'graph' ? 'h-full w-full' : 'hidden'}>
+          <CrawlGraph
+            records={records}
+            cycles={cycles}
+            diffs={diffs}
+            bookmarks={bookmarks}
+            noteUrls={noteUrls}
+            matchingUrls={searchQuery.trim() ? searchMatchingUrls : matchingUrls}
+            direction={direction}
+            maxDepth={maxDepth}
+            onNodeClick={(url) => setSelectedUrl(url)}
+            pulsingNode={pulsingNode}
+            flyToNode={flyToNode}
+            onFlyToDone={() => setFlyToNode(null)}
+            onContextAddNote={handleContextAddNote}
+            highlightedUrls={highlightedUrls}
+          />
+        </div>
 
-        <FilterSidebar
-          open={filtersOpen}
-          onToggle={() => { setFiltersOpen(p => !p); setBookmarksOpen(false); }}
-          filters={filters}
-          onUpdate={updateFilters}
-          onClear={clearFilters}
-          maxDepthInData={maxDepthInData}
-        />
-
+        {/* Bookmarks view */}
         <BookmarksPanel
-          open={bookmarksOpen}
-          onClose={() => setBookmarksOpen(false)}
+          open={activeView === 'bookmarks'}
+          onClose={() => setActiveView('graph')}
           bookmarks={bookmarkList}
           records={records}
           diffs={diffs}
           onNavigate={navigateToNode}
           onRemove={toggleBookmark}
         />
+
+        {/* Filter sidebar — only in graph view */}
+        {activeView === 'graph' && (
+          <FilterSidebar
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen(p => !p)}
+            filters={filters}
+            onUpdate={updateFilters}
+            onClear={clearFilters}
+            maxDepthInData={maxDepthInData}
+          />
+        )}
 
         <NodeSidePanel
           record={selectedRecord}
@@ -267,6 +271,13 @@ const Index: React.FC = () => {
           onToggleBookmark={toggleBookmark}
           onRevertNode={removeDiff}
           onNavigateToNode={navigateToNode}
+        />
+
+        {/* Bottom dock */}
+        <BottomDock
+          activeView={activeView}
+          onSwitch={setActiveView}
+          bookmarkCount={bookmarkCount}
         />
       </div>
 
