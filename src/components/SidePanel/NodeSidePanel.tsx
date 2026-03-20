@@ -6,6 +6,7 @@ interface NodeSidePanelProps {
   record: CrawlRecord | null;
   diff: NodeDiff | undefined;
   isBookmarked: boolean;
+  isHighlighted?: boolean;
   onClose: () => void;
   onUpdateDiff: (url: string, diff: NodeDiff) => void;
   onToggleBookmark: (url: string) => void;
