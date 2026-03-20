@@ -32,6 +32,7 @@ interface CrawlGraphProps {
   direction: 'TB' | 'LR';
   maxDepth: number;
   onNodeClick: (url: string) => void;
+  selectedUrl: string | null;
   pulsingNode: string | null;
   flyToNode: string | null;
   onFlyToDone: () => void;
