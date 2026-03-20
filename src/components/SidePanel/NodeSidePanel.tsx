@@ -53,7 +53,7 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
 
       {/* Tabs */}
       <div className="flex border-b" style={{ borderColor: 'var(--color-border)' }}>
-        {(['meta', 'data'] as const).map(t => (
+        {(['meta', 'data', 'json'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
