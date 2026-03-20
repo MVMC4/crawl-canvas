@@ -271,6 +271,7 @@ const Index: React.FC = () => {
           onToggleBookmark={toggleBookmark}
           onRevertNode={removeDiff}
           onNavigateToNode={navigateToNode}
+          onGoToNode={navigateToNode}
         />
 
         {/* Bottom dock */}
