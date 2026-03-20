@@ -120,12 +120,13 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
         maxZoom={3}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="var(--color-border)" gap={32} size={1} />
+        <Background color="var(--color-border)" gap={40} size={0.5} />
         <Controls showInteractive={false} />
         <MiniMap
-          nodeStrokeWidth={2}
+          nodeStrokeWidth={1}
           nodeColor={() => 'var(--color-text-primary)'}
-          style={{ width: 140, height: 100 }}
+          style={{ width: 120, height: 80 }}
+          maskColor="rgba(0,0,0,0.85)"
         />
       </ReactFlow>
     </div>

@@ -1,8 +1,7 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { CrawlNodeData } from '@/lib/buildTree';
-import { isAssetType } from '@/lib/contentTypeUtils';
-import { getContentTypeBadge } from '@/lib/contentTypeUtils';
+import { isAssetType, getContentTypeBadge } from '@/lib/contentTypeUtils';
 
 interface ExtraProps {
   isBookmarked?: boolean;
@@ -11,7 +10,6 @@ interface ExtraProps {
   nickname?: string;
   isFiltered?: boolean;
   isPulsing?: boolean;
-  onToggleCollapse?: (url: string) => void;
 }
 
 function getNodeLabel(data: CrawlNodeData, nickname?: string): string {
@@ -21,128 +19,146 @@ function getNodeLabel(data: CrawlNodeData, nickname?: string): string {
   try {
     const u = new URL(data.record.url);
     const path = u.pathname === '/' ? u.hostname : u.pathname;
-    return path.length > 28 ? path.slice(0, 28) + '…' : path;
+    return path.length > 20 ? path.slice(0, 20) + '…' : path;
   } catch {
-    return data.record.url.slice(0, 28);
+    return data.record.url.slice(0, 20);
   }
 }
 
-function getNodeStyle(statusCode: number | null, error: string | null, contentType: string | null) {
-  const isAsset = isAssetType(contentType);
+function getNodeColor(statusCode: number | null, error: string | null): string {
+  if (statusCode === null) return 'var(--color-node-error-text)';
+  if (statusCode >= 500) return 'var(--color-accent-error)';
+  if (statusCode === 404) return 'var(--color-node-404-border)';
+  if (statusCode >= 300 && statusCode < 400) return 'var(--color-border-bright)';
+  return 'var(--color-text-primary)';
+}
 
-  let bg = 'var(--bg-node)';
-  let border = '1px solid var(--color-border)';
-  let textColor = 'var(--color-text-on-node)';
-  let shadow = 'none';
-  let opacity = 1;
-
-  if (statusCode === null) {
-    bg = 'var(--color-node-error-bg)';
-    textColor = 'var(--color-node-error-text)';
-  } else if (statusCode >= 300 && statusCode < 400) {
-    opacity = 0.7;
-    border = '1px dashed var(--color-border-bright)';
-  } else if (statusCode === 404) {
-    bg = 'transparent';
-    border = '1.5px dashed var(--color-node-404-border)';
-    textColor = 'var(--color-text-secondary)';
-  } else if (statusCode >= 500) {
-    bg = 'transparent';
-    border = '1.5px solid var(--color-accent-error)';
-    textColor = 'var(--color-accent-error)';
-    shadow = '0 0 6px rgba(204, 34, 34, 0.3)';
-  }
-
-  if (isAsset && statusCode !== null && statusCode < 300) {
-    bg = 'var(--bg-node-asset)';
-  }
-
-  return { bg, border, textColor, shadow, opacity };
+function getNodeSize(data: CrawlNodeData): number {
+  // Seed nodes are larger, nodes with more children are slightly larger
+  if (data.record.url === '__VIRTUAL_ROOT__') return 14;
+  if (data.record.depth === 0) return 12;
+  const base = 6;
+  const extra = Math.min(data.childCount * 0.5, 6);
+  return base + extra;
 }
 
 const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (props) => {
   const { data, selected } = props;
   const extra = (props as unknown as { data: CrawlNodeData & ExtraProps }).data as CrawlNodeData & ExtraProps;
   const { record } = data;
-  const isAsset = isAssetType(record.content_type);
-  const style = getNodeStyle(record.status_code, record.error, record.content_type);
-  const badge = getContentTypeBadge(record.content_type);
   const label = getNodeLabel(data, extra.nickname);
-  const chainMismatch = record.url_chain.length !== record.depth + 1 && record.url !== '__VIRTUAL_ROOT__';
-
+  const color = getNodeColor(record.status_code, record.error);
+  const size = getNodeSize(data);
   const isVirtualRoot = record.url === '__VIRTUAL_ROOT__';
+
+  const handleStyle = { opacity: 0, width: 1, height: 1 };
 
   return (
     <div
-      className={`relative transition-theme ${extra.isPulsing ? 'animate-node-pulse' : ''}`}
+      className={`relative group ${extra.isPulsing ? 'animate-node-pulse' : ''}`}
       style={{
-        opacity: extra.isFiltered ? 0.1 : style.opacity,
-        width: isAsset ? 62 : 180,
-        height: isAsset ? 62 : 56,
+        opacity: extra.isFiltered ? 0.08 : 1,
+        width: size * 2 + 40,
+        height: size * 2 + 28,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0, width: 6, height: 6 }} />
+      <Handle type="target" position={Position.Top} style={handleStyle} />
 
+      {/* The dot */}
       <div
-        className="flex h-full w-full items-center justify-center overflow-hidden"
         style={{
-          background: style.bg,
-          border: style.border,
-          color: style.textColor,
-          boxShadow: selected ? `0 0 0 2px var(--color-text-primary)` : style.shadow,
-          borderRadius: isAsset ? 0 : 6,
-          transform: isAsset ? 'rotate(45deg)' : undefined,
-          transition: 'box-shadow 120ms',
-          borderLeft: extra.hasEdits && !isAsset ? '2px solid var(--color-border-bright)' : undefined,
+          width: size * 2,
+          height: size * 2,
+          borderRadius: '50%',
+          background: selected ? 'var(--color-text-primary)' : color,
+          border: selected ? '2px solid var(--color-text-primary)' : extra.hasEdits ? `2px solid var(--color-border-bright)` : `1.5px solid ${color}`,
+          boxShadow: selected
+            ? `0 0 12px ${color}, 0 0 24px ${color}`
+            : `0 0 ${size}px ${color}33`,
+          transition: 'box-shadow 200ms, background 200ms, transform 150ms',
+          cursor: 'pointer',
+          position: 'relative',
         }}
       >
-        <div
-          className="flex flex-col items-center gap-0.5 px-2"
-          style={{ transform: isAsset ? 'rotate(-45deg)' : undefined }}
-        >
-          <span className="text-[10px] leading-tight font-bold truncate max-w-[160px]">
-            {isVirtualRoot ? 'ROOT' : label}
+        {/* Bookmark indicator */}
+        {extra.isBookmarked && (
+          <span
+            className="absolute -top-1 -right-1 text-[8px]"
+            style={{ color: '#f5c518' }}
+          >
+            ★
           </span>
-          {!isAsset && !isVirtualRoot && (
-            <span className="text-[9px] opacity-70 tabular-nums">
-              {record.status_code ?? 'ERR'}
-            </span>
-          )}
-        </div>
+        )}
+        {extra.hasStickyNote && (
+          <span className="absolute -bottom-1 -right-1 text-[7px]">📌</span>
+        )}
       </div>
 
-      {/* Badges */}
-      {!isVirtualRoot && (
-        <>
-          <span className="absolute -top-1 -left-1 text-[11px]">{badge}</span>
-          {extra.isBookmarked && <span className="absolute -top-1 -right-1 text-[11px]" style={{ color: '#f5c518' }}>★</span>}
-          {chainMismatch && <span className="absolute top-0 -right-1 text-[11px]" title="URL chain length mismatch">⚠️</span>}
-          {extra.hasStickyNote && <span className="absolute -bottom-1 -right-1 text-[10px]">📌</span>}
-        </>
-      )}
+      {/* Label — visible on hover or when selected */}
+      <div
+        className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none absolute whitespace-nowrap"
+        style={{
+          top: size * 2 + 4,
+          fontSize: 9,
+          fontFamily: "'Space Mono', monospace",
+          color: 'var(--color-text-secondary)',
+          textAlign: 'center',
+          opacity: selected ? 1 : undefined,
+          maxWidth: 120,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {label}
+        {record.status_code !== null && record.status_code !== 200 && !isVirtualRoot && (
+          <span style={{ marginLeft: 3, color: color, fontSize: 8 }}>{record.status_code}</span>
+        )}
+      </div>
 
-      {record.depth === 0 && !isVirtualRoot && (
-        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
-          SEED
+      {/* Always-visible label for selected or seed */}
+      {(selected || record.depth === 0) && !isVirtualRoot && (
+        <div
+          className="pointer-events-none absolute whitespace-nowrap"
+          style={{
+            top: size * 2 + 4,
+            fontSize: 9,
+            fontFamily: "'Space Mono', monospace",
+            color: 'var(--color-text-primary)',
+            textAlign: 'center',
+            maxWidth: 140,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {label}
+          {record.depth === 0 && (
+            <span style={{ marginLeft: 4, fontSize: 7, letterSpacing: '0.1em', color: 'var(--color-text-secondary)' }}>SEED</span>
+          )}
         </div>
       )}
 
-      {record.error && !isVirtualRoot && (
-        <div className="absolute -bottom-4 left-0 right-0 text-center text-[8px] truncate" style={{ color: 'var(--color-accent-error)' }}>
-          {record.error}
-        </div>
-      )}
-
+      {/* Collapsed badge */}
       {data.isCollapsed && data.hiddenDescendants > 0 && (
         <div
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-          style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+          className="absolute rounded-full px-1 py-0.5"
+          style={{
+            top: -4,
+            left: size * 2,
+            fontSize: 7,
+            fontFamily: "'Space Mono', monospace",
+            background: 'var(--bg-panel-secondary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+          }}
         >
           +{data.hiddenDescendants}
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, width: 6, height: 6 }} />
+      <Handle type="source" position={Position.Bottom} style={handleStyle} />
     </div>
   );
 };
