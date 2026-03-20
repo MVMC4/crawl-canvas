@@ -227,7 +227,7 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
           <p
             className="text-[8px] font-bold truncate"
             style={{
-              color: isHighlighted ? '#22c55e' : 'var(--color-text-primary)',
+              color: titleColor,
               fontFamily: "'Space Mono', monospace",
             }}
           >
