@@ -12,10 +12,11 @@ interface NodeSidePanelProps {
   onToggleBookmark: (url: string) => void;
   onRevertNode: (url: string) => void;
   onNavigateToNode: (url: string) => void;
+  onGoToNode: (url: string) => void;
 }
 
 export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
-  record, diff, isBookmarked, isHighlighted, onClose, onUpdateDiff, onToggleBookmark, onRevertNode, onNavigateToNode,
+  record, diff, isBookmarked, isHighlighted, onClose, onUpdateDiff, onToggleBookmark, onRevertNode, onNavigateToNode, onGoToNode,
 }) => {
   const [tab, setTab] = useState<'meta' | 'data' | 'json'>('meta');
   const isOpen = record !== null;
@@ -78,6 +79,7 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
             onUpdateDiff={onUpdateDiff}
             onToggleBookmark={onToggleBookmark}
             onNavigateToNode={onNavigateToNode}
+            onGoToNode={onGoToNode}
           />
         ) : tab === 'data' ? (
           <DataTab record={record} diff={diff} onUpdateDiff={onUpdateDiff} onRevertNode={onRevertNode} />
@@ -97,7 +99,8 @@ const MetaTab: React.FC<{
   onUpdateDiff: (url: string, diff: NodeDiff) => void;
   onToggleBookmark: (url: string) => void;
   onNavigateToNode: (url: string) => void;
-}> = ({ record, diff, isBookmarked, onUpdateDiff, onToggleBookmark, onNavigateToNode }) => {
+  onGoToNode: (url: string) => void;
+}> = ({ record, diff, isBookmarked, onUpdateDiff, onToggleBookmark, onNavigateToNode, onGoToNode }) => {
   const [nickname, setNickname] = useState(diff?.nickname || '');
   const [description, setDescription] = useState(diff?.description || '');
   const [comments, setComments] = useState(diff?.comments || '');
@@ -147,17 +150,30 @@ const MetaTab: React.FC<{
           style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
         />
       </Field>
-      <button
-        onClick={() => onToggleBookmark(record.url)}
-        className="flex items-center gap-1 rounded px-2 py-1 text-[11px] transition-colors"
-        style={{
-          background: isBookmarked ? 'rgba(245, 197, 24, 0.15)' : 'var(--bg-panel-secondary)',
-          color: isBookmarked ? '#f5c518' : 'var(--color-text-secondary)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        {isBookmarked ? '★ Bookmarked' : '☆ Bookmark'}
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onToggleBookmark(record.url)}
+          className="flex items-center gap-1 rounded px-2 py-1 text-[11px] transition-colors"
+          style={{
+            background: isBookmarked ? 'rgba(245, 197, 24, 0.15)' : 'var(--bg-panel-secondary)',
+            color: isBookmarked ? '#f5c518' : 'var(--color-text-secondary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          {isBookmarked ? '★ Bookmarked' : '☆ Bookmark'}
+        </button>
+        <button
+          onClick={() => onGoToNode(record.url)}
+          className="flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold transition-colors hover:scale-105 active:scale-95"
+          style={{
+            background: 'var(--bg-panel-secondary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          ↗ Go to node
+        </button>
+      </div>
 
       <div className="flex flex-wrap gap-1.5 pt-2">
         <Chip label="Depth" value={String(record.depth)} />

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { CrawlRecord, NodeDiff } from '@/types/crawl';
 import { getContentTypeLabel } from '@/lib/contentTypeUtils';
 
@@ -8,34 +8,76 @@ interface BookmarksPanelProps {
   bookmarks: string[];
   records: CrawlRecord[];
   diffs: Record<string, NodeDiff>;
-  onNavigate: (url: string) => void;
+  onSelect: (url: string) => void;
   onRemove: (url: string) => void;
 }
 
+interface BookmarkPosition {
+  x: number;
+  y: number;
+}
+
 export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
-  open, onClose, bookmarks, records, diffs, onNavigate, onRemove,
+  open, onClose, bookmarks, records, diffs, onSelect, onRemove,
 }) => {
   const recordMap = useMemo(() => new Map(records.map(r => [r.url, r])), [records]);
 
-  // Position bookmarks in a loose cluster around center
-  const positioned = useMemo(() => {
-    const cx = 0;
-    const cy = 0;
-    return bookmarks.map((url, i) => {
+  // Track dragged positions per URL
+  const [positions, setPositions] = useState<Record<string, BookmarkPosition>>({});
+  const dragRef = useRef<{ url: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const didDrag = useRef(false);
+
+  // Compute default positions
+  const defaults = useMemo(() => {
+    const map: Record<string, BookmarkPosition> = {};
+    bookmarks.forEach((url, i) => {
       const angle = (i / Math.max(bookmarks.length, 1)) * Math.PI * 2 + Math.PI / 6;
       const radius = 60 + (i % 3) * 40;
-      return {
-        url,
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
-      };
+      map[url] = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
     });
+    return map;
   }, [bookmarks]);
+
+  const getPos = (url: string): BookmarkPosition => positions[url] || defaults[url] || { x: 0, y: 0 };
+
+  const handlePointerDown = useCallback((e: React.PointerEvent, url: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const pos = positions[url] || defaults[url] || { x: 0, y: 0 };
+    dragRef.current = { url, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
+    didDrag.current = false;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [positions, defaults]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag.current = true;
+    setPositions(prev => ({
+      ...prev,
+      [dragRef.current!.url]: {
+        x: dragRef.current!.origX + dx,
+        y: dragRef.current!.origY + dy,
+      },
+    }));
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent, url: string) => {
+    if (!didDrag.current) {
+      onSelect(url);
+    }
+    dragRef.current = null;
+  }, [onSelect]);
 
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-20" style={{ background: 'var(--bg-canvas)' }}>
+    <div
+      className="absolute inset-0 z-20"
+      style={{ background: 'var(--bg-canvas)' }}
+      onPointerMove={handlePointerMove}
+    >
       {/* Header */}
       <div
         className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 rounded-lg px-4 py-2"
@@ -59,7 +101,8 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
         </div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
-          {positioned.map(({ url, x, y }) => {
+          {bookmarks.map((url) => {
+            const { x, y } = getPos(url);
             const r = recordMap.get(url);
             const diff = diffs[url];
             const label = diff?.nickname || r?.page_title || url.slice(0, 30);
@@ -69,11 +112,13 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
             return (
               <div
                 key={url}
-                className="absolute cursor-pointer group transition-transform duration-200 hover:scale-105"
+                className="absolute group select-none"
                 style={{
                   transform: `translate(${x}px, ${y}px)`,
+                  cursor: dragRef.current?.url === url ? 'grabbing' : 'grab',
                 }}
-                onClick={() => onNavigate(url)}
+                onPointerDown={(e) => handlePointerDown(e, url)}
+                onPointerUp={(e) => handlePointerUp(e, url)}
               >
                 {/* Node dot */}
                 <div
@@ -84,6 +129,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
                     background: '#f5c518',
                     boxShadow: '0 0 8px #f5c51866',
                     border: '1px solid #f5c518',
+                    pointerEvents: 'none',
                   }}
                 />
                 {/* Card below */}
@@ -95,6 +141,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
                     background: 'var(--bg-panel)',
                     border: '1px solid var(--color-border)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                    pointerEvents: 'none',
                   }}
                 >
                   <p
@@ -125,7 +172,9 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
                     background: 'var(--bg-panel-secondary)',
                     color: 'var(--color-text-secondary)',
                     border: '1px solid var(--color-border)',
+                    pointerEvents: 'auto',
                   }}
+                  onPointerDown={(e) => e.stopPropagation()}
                 >
                   ×
                 </button>

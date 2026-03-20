@@ -245,7 +245,7 @@ const Index: React.FC = () => {
           bookmarks={bookmarkList}
           records={records}
           diffs={diffs}
-          onNavigate={navigateToNode}
+          onSelect={(url) => setSelectedUrl(url)}
           onRemove={toggleBookmark}
         />
 
@@ -271,6 +271,7 @@ const Index: React.FC = () => {
           onToggleBookmark={toggleBookmark}
           onRevertNode={removeDiff}
           onNavigateToNode={navigateToNode}
+          onGoToNode={navigateToNode}
         />
 
         {/* Bottom dock */}
