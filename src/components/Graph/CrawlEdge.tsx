@@ -5,6 +5,7 @@ interface CrawlEdgeData {
   sourceTag?: string;
   sourceText?: string;
   isCircular?: boolean;
+  isAsset?: boolean;
 }
 
 const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
@@ -12,6 +13,7 @@ const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
 }) => {
   const [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
   const isCircular = data?.isCircular;
+  const isAsset = data?.isAsset;
 
   const color = isCircular
     ? 'var(--color-accent-error)'
@@ -27,7 +29,8 @@ const CrawlEdgeComponent: React.FC<EdgeProps<CrawlEdgeData>> = ({
         fill="none"
         stroke={color}
         strokeWidth={isCircular ? 1 : 0.5}
-        strokeOpacity={isCircular ? 0.8 : 0.25}
+        strokeOpacity={isCircular ? 0.8 : isAsset ? 0.15 : 0.25}
+        strokeDasharray={isAsset ? '3 3' : undefined}
         className="react-flow__edge-path"
         style={{ transition: 'stroke 150ms, stroke-opacity 150ms' }}
       />
