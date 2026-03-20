@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { CrawlNodeData } from '@/lib/buildTree';
+import { getContentTypeLabel } from '@/lib/contentTypeUtils';
 
 interface ExtraProps {
   isBookmarked?: boolean;
@@ -95,6 +96,15 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
   const isVirtualRoot = record.url === '__VIRTUAL_ROOT__';
   const shape = getNodeShape(record.content_type);
   const isHighlighted = extra.isHighlighted || false;
+  const [hovered, setHovered] = useState(false);
+
+  let shortPath = '';
+  try {
+    const u = new URL(record.url);
+    shortPath = u.pathname;
+  } catch {
+    shortPath = record.url;
+  }
 
   return (
     <div
@@ -104,6 +114,8 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         width: diameter,
         height: diameter,
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <Handle
         type="target"
@@ -197,6 +209,39 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
           <span style={{ marginLeft: 3, fontSize: 6, letterSpacing: '0.1em', color: 'var(--color-text-secondary)' }}>SEED</span>
         )}
       </div>
+
+      {/* Hover tooltip */}
+      {hovered && !isVirtualRoot && (
+        <div
+          className="absolute pointer-events-none z-50"
+          style={{
+            top: -8,
+            left: diameter + 8,
+            minWidth: 180,
+            maxWidth: 260,
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            padding: '6px 8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          }}
+        >
+          <p className="text-[8px] font-bold truncate" style={{ color: 'var(--color-text-primary)', fontFamily: "'Space Mono', monospace" }}>
+            {record.url}
+          </p>
+          <div className="flex gap-3 mt-1">
+            <span className="text-[7px]" style={{ color: 'var(--color-text-secondary)' }}>
+              Type: <span style={{ color: 'var(--color-text-primary)' }}>{getContentTypeLabel(record.content_type)}</span>
+            </span>
+            <span className="text-[7px]" style={{ color: 'var(--color-text-secondary)' }}>
+              Status: <span style={{ color: getNodeColor(record.status_code) }}>{record.status_code ?? 'N/A'}</span>
+            </span>
+          </div>
+          <p className="text-[7px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+            Path: {shortPath}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

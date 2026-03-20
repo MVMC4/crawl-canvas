@@ -16,7 +16,7 @@ interface NodeSidePanelProps {
 export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
   record, diff, isBookmarked, onClose, onUpdateDiff, onToggleBookmark, onRevertNode, onNavigateToNode,
 }) => {
-  const [tab, setTab] = useState<'meta' | 'data'>('meta');
+  const [tab, setTab] = useState<'meta' | 'data' | 'json'>('meta');
   const isOpen = record !== null;
 
   if (!record) return null;
@@ -53,7 +53,7 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
 
       {/* Tabs */}
       <div className="flex border-b" style={{ borderColor: 'var(--color-border)' }}>
-        {(['meta', 'data'] as const).map(t => (
+        {(['meta', 'data', 'json'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -78,8 +78,10 @@ export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
             onToggleBookmark={onToggleBookmark}
             onNavigateToNode={onNavigateToNode}
           />
-        ) : (
+        ) : tab === 'data' ? (
           <DataTab record={record} diff={diff} onUpdateDiff={onUpdateDiff} onRevertNode={onRevertNode} />
+        ) : (
+          <JsonTab record={record} />
         )}
       </div>
     </div>
@@ -262,6 +264,34 @@ const DataTab: React.FC<{
     </div>
   );
 };
+
+// JSON Tab
+const JsonTab: React.FC<{ record: CrawlRecord }> = ({ record }) => (
+  <div>
+    <div className="flex items-center justify-between mb-2">
+      <p className="text-[9px] font-bold tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>RAW JSON</p>
+      <button
+        onClick={() => navigator.clipboard.writeText(JSON.stringify(record, null, 2))}
+        className="text-[9px] px-1.5 py-0.5 rounded"
+        style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+      >
+        Copy
+      </button>
+    </div>
+    <pre
+      className="rounded p-2 text-[9px] overflow-auto whitespace-pre-wrap break-all"
+      style={{
+        background: 'var(--bg-panel-secondary)',
+        color: 'var(--color-text-primary)',
+        border: '1px solid var(--color-border)',
+        maxHeight: 'calc(100vh - 160px)',
+        fontFamily: "'Space Mono', monospace",
+      }}
+    >
+      {JSON.stringify(record, null, 2)}
+    </pre>
+  </div>
+);
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div>
