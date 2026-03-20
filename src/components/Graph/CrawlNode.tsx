@@ -52,17 +52,35 @@ function getNodeShape(ct: string | null): NodeShape {
   return 'circle';
 }
 
-function getShapeStyle(shape: NodeShape, diameter: number, color: string, selected: boolean, hasEdits: boolean, isHighlighted: boolean): React.CSSProperties {
-  const highlightColor = '#22c55e';
-  const borderColor = isHighlighted ? highlightColor : hasEdits ? 'var(--color-border-bright)' : color;
-  const borderWidth = isHighlighted ? 2 : hasEdits ? 1.5 : 1;
-  const bg = selected ? 'var(--color-text-primary)' : isHighlighted ? highlightColor : color;
+function getShapeStyle(
+  shape: NodeShape, diameter: number, color: string, selected: boolean,
+  hasEdits: boolean, isHighlighted: boolean, isHovered: boolean
+): React.CSSProperties {
+  const greenColor = '#22c55e';
+  const purpleColor = '#a855f7';
 
-  const baseShadow = selected
-    ? `0 0 10px ${color}, 0 0 20px ${color}`
-    : isHighlighted
-      ? `0 0 8px ${highlightColor}, 0 0 16px ${highlightColor}88`
-      : `0 0 ${diameter / 2 + 2}px ${color}44`;
+  // Determine active highlight: hover or selected "stick"
+  const activeHighlight = isHovered || selected;
+  let effectColor: string | null = null;
+  if (activeHighlight) {
+    effectColor = isHighlighted ? purpleColor : greenColor;
+  }
+
+  const borderColor = effectColor
+    ? effectColor
+    : isHighlighted ? greenColor : hasEdits ? 'var(--color-border-bright)' : color;
+  const borderWidth = effectColor || isHighlighted ? 2 : hasEdits ? 1.5 : 1;
+  const bg = effectColor
+    ? effectColor
+    : selected ? 'var(--color-text-primary)' : isHighlighted ? greenColor : color;
+
+  const baseShadow = effectColor
+    ? `0 0 10px ${effectColor}, 0 0 20px ${effectColor}88`
+    : selected
+      ? `0 0 10px ${color}, 0 0 20px ${color}`
+      : isHighlighted
+        ? `0 0 8px ${greenColor}, 0 0 16px ${greenColor}88`
+        : `0 0 ${diameter / 2 + 2}px ${color}44`;
 
   const base: React.CSSProperties = {
     width: diameter,
@@ -70,7 +88,7 @@ function getShapeStyle(shape: NodeShape, diameter: number, color: string, select
     background: bg,
     border: `${borderWidth}px solid ${borderColor}`,
     boxShadow: baseShadow,
-    transition: 'box-shadow 200ms, background 200ms',
+    transition: 'box-shadow 200ms, background 200ms, border 200ms',
     cursor: 'pointer',
   };
 
