@@ -16,7 +16,7 @@ interface NodeSidePanelProps {
 export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
   record, diff, isBookmarked, onClose, onUpdateDiff, onToggleBookmark, onRevertNode, onNavigateToNode,
 }) => {
-  const [tab, setTab] = useState<'meta' | 'data'>('meta');
+  const [tab, setTab] = useState<'meta' | 'data' | 'json'>('meta');
   const isOpen = record !== null;
 
   if (!record) return null;
