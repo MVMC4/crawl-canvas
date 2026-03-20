@@ -99,7 +99,8 @@ const MetaTab: React.FC<{
   onUpdateDiff: (url: string, diff: NodeDiff) => void;
   onToggleBookmark: (url: string) => void;
   onNavigateToNode: (url: string) => void;
-}> = ({ record, diff, isBookmarked, onUpdateDiff, onToggleBookmark, onNavigateToNode }) => {
+  onGoToNode: (url: string) => void;
+}> = ({ record, diff, isBookmarked, onUpdateDiff, onToggleBookmark, onNavigateToNode, onGoToNode }) => {
   const [nickname, setNickname] = useState(diff?.nickname || '');
   const [description, setDescription] = useState(diff?.description || '');
   const [comments, setComments] = useState(diff?.comments || '');
