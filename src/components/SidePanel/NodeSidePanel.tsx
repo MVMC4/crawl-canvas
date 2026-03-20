@@ -12,6 +12,7 @@ interface NodeSidePanelProps {
   onToggleBookmark: (url: string) => void;
   onRevertNode: (url: string) => void;
   onNavigateToNode: (url: string) => void;
+  onGoToNode: (url: string) => void;
 }
 
 export const NodeSidePanel: React.FC<NodeSidePanelProps> = ({
