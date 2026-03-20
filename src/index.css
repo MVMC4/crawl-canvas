@@ -2,95 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 53%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
+    --radius: 0.375rem;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --bg-canvas: #000000;
+    --bg-panel: #0d0d0d;
+    --bg-panel-secondary: #1a1a1a;
+    --bg-node: #ffffff;
+    --bg-node-asset: #2a2a2a;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #888888;
+    --color-text-on-node: #000000;
+    --color-border: #333333;
+    --color-border-bright: #666666;
+    --color-edge: #444444;
+    --color-edge-hover: #888888;
+    --color-accent-error: #cc2222;
+    --color-accent-warning: #aa6600;
+    --color-node-404-border: #555555;
+    --color-node-error-bg: #1a1a1a;
+    --color-node-error-text: #666666;
+    --shadow-panel: 0 0 0 1px #333333;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 0% 100%;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  [data-theme="light"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 96%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 96%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 92%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 80%;
+    --input: 0 0% 80%;
+    --ring: 0 0% 0%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --bg-canvas: #ffffff;
+    --bg-panel: #f5f5f5;
+    --bg-panel-secondary: #ebebeb;
+    --bg-node: #000000;
+    --bg-node-asset: #e0e0e0;
+    --color-text-primary: #000000;
+    --color-text-secondary: #666666;
+    --color-text-on-node: #ffffff;
+    --color-border: #cccccc;
+    --color-border-bright: #999999;
+    --color-edge: #bbbbbb;
+    --color-edge-hover: #555555;
+    --color-accent-error: #dd3333;
+    --color-accent-warning: #cc7700;
+    --color-node-404-border: #aaaaaa;
+    --color-node-error-bg: #f0f0f0;
+    --color-node-error-text: #aaaaaa;
+    --shadow-panel: 0 0 0 1px #cccccc;
   }
 }
 
@@ -98,8 +100,48 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-family: 'Space Mono', monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+}
+
+@layer utilities {
+  .transition-theme {
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+}
+
+@keyframes node-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.animate-node-pulse {
+  animation: node-pulse 600ms ease-in-out 3;
+}
+
+/* React Flow overrides */
+.react-flow__background {
+  background-color: var(--bg-canvas) !important;
+}
+.react-flow__minimap {
+  background-color: var(--bg-panel) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 4px;
+}
+.react-flow__controls {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 4px;
+}
+.react-flow__controls-button {
+  background: var(--bg-panel) !important;
+  border-color: var(--color-border) !important;
+  fill: var(--color-text-primary) !important;
+}
+.react-flow__controls-button:hover {
+  background: var(--bg-panel-secondary) !important;
 }

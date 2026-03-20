@@ -1,16 +1,243 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { LandingScreen } from '@/components/Landing/LandingScreen';
+import { TopBar } from '@/components/TopBar/TopBar';
+import { StatusBar } from '@/components/TopBar/StatusBar';
+import { CrawlGraph } from '@/components/Graph/CrawlGraph';
+import { NodeSidePanel } from '@/components/SidePanel/NodeSidePanel';
+import { FilterSidebar } from '@/components/FilterSidebar/FilterSidebar';
+import { BookmarksPanel } from '@/components/BookmarksPanel/BookmarksPanel';
+import { ProjectMetaModal } from '@/components/ProjectMetaModal/ProjectMetaModal';
+import { useCrawlData } from '@/hooks/useCrawlData';
+import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { useFilters } from '@/hooks/useFilters';
+import { useTheme } from '@/hooks/useTheme';
+import { useStickyNotes } from '@/hooks/useStickyNotes';
+import { ProjectMeta, CrawlRecord } from '@/types/crawl';
+import { getProjectMeta, setProjectMeta as saveProjectMeta, clearAll } from '@/lib/localStorage';
+import { buildExportData, downloadJson } from '@/lib/exportUtils';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index: React.FC = () => {
+  const { records, cycles, loading, error, loaded, loadFile } = useCrawlData();
+  const { diffs, updateDiff, removeDiff } = useLocalStorageSync();
+  const { bookmarks, toggle: toggleBookmark, isBookmarked, count: bookmarkCount, list: bookmarkList } = useBookmarks();
+  const { notes } = useStickyNotes();
+  const { theme, toggle: toggleTheme } = useTheme();
+
+  const editedUrls = useMemo(() => new Set(Object.keys(diffs)), [diffs]);
+  const noteUrls = useMemo(() => new Set(notes.filter(n => n.connectedNodeUrl).map(n => n.connectedNodeUrl!)), [notes]);
+
+  const { filters, updateFilters, clearFilters, matchingUrls, hasActiveFilters } = useFilters(records, bookmarks, editedUrls, noteUrls);
+
+  const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [direction, setDirection] = useState<'TB' | 'LR'>('TB');
+  const [maxDepth, setMaxDepth] = useState(3);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pulsingNode, setPulsingNode] = useState<string | null>(null);
+  const [flyToNode, setFlyToNode] = useState<string | null>(null);
+  const [savedRecently, setSavedRecently] = useState(false);
+  const [projectMeta, setProjectMeta] = useState<ProjectMeta>(() => getProjectMeta() || { name: '', description: '', auditNotes: '', crawlDate: '' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const selectedRecord = useMemo(() => records.find(r => r.url === selectedUrl) || null, [records, selectedUrl]);
+
+  const maxDepthInData = useMemo(() => Math.max(0, ...records.map(r => r.depth)), [records]);
+  const deeperCount = useMemo(() => records.filter(r => r.depth > maxDepth).length, [records, maxDepth]);
+
+  const showingCount = useMemo(() => {
+    if (!matchingUrls) return records.filter(r => r.depth <= maxDepth).length;
+    return records.filter(r => r.depth <= maxDepth && matchingUrls.has(r.url)).length;
+  }, [records, maxDepth, matchingUrls]);
+
+  // Search filtering  
+  const searchMatchingUrls = useMemo(() => {
+    if (!searchQuery.trim()) return matchingUrls;
+    const q = searchQuery.toLowerCase();
+    const searchMatches = new Set<string>();
+    for (const r of records) {
+      const nick = diffs[r.url]?.nickname || '';
+      const desc = diffs[r.url]?.description || '';
+      if (
+        r.url.toLowerCase().includes(q) ||
+        (r.page_title?.toLowerCase().includes(q)) ||
+        nick.toLowerCase().includes(q) ||
+        desc.toLowerCase().includes(q)
+      ) {
+        searchMatches.add(r.url);
+      }
+    }
+    if (matchingUrls) {
+      return new Set([...searchMatches].filter(u => matchingUrls.has(u)));
+    }
+    return searchMatches;
+  }, [searchQuery, records, diffs, matchingUrls]);
+
+  const navigateToNode = useCallback((url: string) => {
+    setBookmarksOpen(false);
+    setFlyToNode(url);
+    setPulsingNode(url);
+    setSelectedUrl(url);
+    setTimeout(() => setPulsingNode(null), 2000);
+  }, []);
+
+  const handleExportJson = useCallback(() => {
+    const data = buildExportData(records, diffs, bookmarkList, projectMeta);
+    downloadJson(data);
+  }, [records, diffs, bookmarkList, projectMeta]);
+
+  const handleSaveProjectMeta = useCallback((meta: ProjectMeta) => {
+    setProjectMeta(meta);
+    saveProjectMeta(meta);
+    setSavedRecently(true);
+    setTimeout(() => setSavedRecently(false), 2000);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    if (confirm('Reset all edits, bookmarks, and notes? This cannot be undone.')) {
+      clearAll();
+      window.location.reload();
+    }
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedUrl(null);
+        setInfoOpen(false);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setBookmarksOpen(p => !p);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  if (!loaded) {
+    return <LandingScreen onFileLoad={loadFile} loading={loading} error={error} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="flex flex-col h-screen transition-theme" style={{ background: 'var(--bg-canvas)' }}>
+      <TopBar
+        projectName={projectMeta.name}
+        onToggleFilters={() => { setFiltersOpen(p => !p); setBookmarksOpen(false); }}
+        onToggleBookmarks={() => { setBookmarksOpen(p => !p); setFiltersOpen(false); }}
+        onOpenInfo={() => setInfoOpen(true)}
+        onToggleDirection={() => setDirection(d => d === 'TB' ? 'LR' : 'TB')}
+        onToggleTheme={toggleTheme}
+        onExportJson={handleExportJson}
+        onExportPng={() => { /* PNG export placeholder */ }}
+        onLoadFile={() => fileInputRef.current?.click()}
+        theme={theme}
+        direction={direction}
+        bookmarkCount={bookmarkCount}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filtersOpen={filtersOpen}
+      />
+      <StatusBar
+        total={records.length}
+        showing={showingCount}
+        warnings={cycles.length}
+        savedRecently={savedRecently}
+      />
+
+      {/* Depth loader */}
+      {deeperCount > 0 && (
+        <div className="flex items-center justify-center py-1" style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--color-border)' }}>
+          <button
+            onClick={() => setMaxDepth(maxDepthInData)}
+            className="text-[10px] font-bold px-3 py-1 rounded"
+            style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+          >
+            ⬇ Load deeper nodes ({deeperCount} remaining)
+          </button>
+          <button
+            onClick={() => setMaxDepth(d => Math.min(d + 1, maxDepthInData))}
+            className="ml-2 text-[10px] px-2 py-1 rounded"
+            style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+          >
+            +1 level
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 relative overflow-hidden">
+        <CrawlGraph
+          records={records}
+          cycles={cycles}
+          diffs={diffs}
+          bookmarks={bookmarks}
+          noteUrls={noteUrls}
+          matchingUrls={searchQuery.trim() ? searchMatchingUrls : matchingUrls}
+          direction={direction}
+          maxDepth={maxDepth}
+          onNodeClick={(url) => setSelectedUrl(url)}
+          pulsingNode={pulsingNode}
+          flyToNode={flyToNode}
+          onFlyToDone={() => setFlyToNode(null)}
+        />
+
+        <FilterSidebar
+          open={filtersOpen}
+          filters={filters}
+          onUpdate={updateFilters}
+          onClear={clearFilters}
+          maxDepthInData={maxDepthInData}
+        />
+
+        <BookmarksPanel
+          open={bookmarksOpen}
+          onClose={() => setBookmarksOpen(false)}
+          bookmarks={bookmarkList}
+          records={records}
+          diffs={diffs}
+          onNavigate={navigateToNode}
+          onRemove={toggleBookmark}
+        />
+
+        <NodeSidePanel
+          record={selectedRecord}
+          diff={selectedUrl ? diffs[selectedUrl] : undefined}
+          isBookmarked={selectedUrl ? isBookmarked(selectedUrl) : false}
+          onClose={() => setSelectedUrl(null)}
+          onUpdateDiff={(url, diff) => { updateDiff(url, diff); setSavedRecently(true); setTimeout(() => setSavedRecently(false), 2000); }}
+          onToggleBookmark={toggleBookmark}
+          onRevertNode={removeDiff}
+          onNavigateToNode={navigateToNode}
+        />
+      </div>
+
+      <ProjectMetaModal
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        meta={projectMeta}
+        onSave={handleSaveProjectMeta}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            if (confirm('Loading a new file will replace current data. Continue?')) {
+              clearAll();
+              loadFile(file);
+            }
+          }
+        }}
+      />
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
