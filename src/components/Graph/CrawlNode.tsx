@@ -175,29 +175,6 @@ const CrawlNodeComponent: React.FC<NodeProps<CrawlNodeData> & ExtraProps> = (pro
         </div>
       )}
 
-      {/* Label — only for selected or seed nodes */}
-      <div
-        className={`absolute whitespace-nowrap pointer-events-none ${
-          selected || record.depth === 0 ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{
-          top: diameter + 3,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: 8,
-          fontFamily: "'Space Mono', monospace",
-          color: isHighlighted ? '#22c55e' : record.depth === 0 ? '#a855f7' : selected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-          textAlign: 'center',
-          maxWidth: 100,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {isVirtualRoot ? 'ROOT' : label}
-        {record.depth === 0 && !isVirtualRoot && (
-          <span style={{ marginLeft: 3, fontSize: 6, letterSpacing: '0.1em', color: '#a855f7' }}>SEED</span>
-        )}
-      </div>
     </div>
   );
 };
