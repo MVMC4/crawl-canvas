@@ -265,6 +265,34 @@ const DataTab: React.FC<{
   );
 };
 
+// JSON Tab
+const JsonTab: React.FC<{ record: CrawlRecord }> = ({ record }) => (
+  <div>
+    <div className="flex items-center justify-between mb-2">
+      <p className="text-[9px] font-bold tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>RAW JSON</p>
+      <button
+        onClick={() => navigator.clipboard.writeText(JSON.stringify(record, null, 2))}
+        className="text-[9px] px-1.5 py-0.5 rounded"
+        style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+      >
+        Copy
+      </button>
+    </div>
+    <pre
+      className="rounded p-2 text-[9px] overflow-auto whitespace-pre-wrap break-all"
+      style={{
+        background: 'var(--bg-panel-secondary)',
+        color: 'var(--color-text-primary)',
+        border: '1px solid var(--color-border)',
+        maxHeight: 'calc(100vh - 160px)',
+        fontFamily: "'Space Mono', monospace",
+      }}
+    >
+      {JSON.stringify(record, null, 2)}
+    </pre>
+  </div>
+);
+
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div>
     <label className="text-[9px] font-bold block mb-1 tracking-wider uppercase" style={{ color: 'var(--color-text-secondary)' }}>

@@ -33,7 +33,7 @@ const Index: React.FC = () => {
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [direction, setDirection] = useState<'TB' | 'LR'>('TB');
-  const [maxDepth, setMaxDepth] = useState(3);
+  const [maxDepth, setMaxDepth] = useState(2);
   const [searchQuery, setSearchQuery] = useState('');
   const [pulsingNode, setPulsingNode] = useState<string | null>(null);
   const [flyToNode, setFlyToNode] = useState<string | null>(null);
