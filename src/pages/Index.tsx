@@ -230,6 +230,7 @@ const Index: React.FC = () => {
             direction={direction}
             maxDepth={maxDepth}
             onNodeClick={(url) => setSelectedUrl(url)}
+            selectedUrl={selectedUrl}
             pulsingNode={pulsingNode}
             flyToNode={flyToNode}
             onFlyToDone={() => setFlyToNode(null)}

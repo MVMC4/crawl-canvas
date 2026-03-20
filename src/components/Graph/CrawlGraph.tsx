@@ -32,6 +32,7 @@ interface CrawlGraphProps {
   direction: 'TB' | 'LR';
   maxDepth: number;
   onNodeClick: (url: string) => void;
+  selectedUrl: string | null;
   pulsingNode: string | null;
   flyToNode: string | null;
   onFlyToDone: () => void;
@@ -41,7 +42,7 @@ interface CrawlGraphProps {
 
 export const CrawlGraph: React.FC<CrawlGraphProps> = ({
   records, cycles, diffs, bookmarks, noteUrls, matchingUrls,
-  direction, maxDepth, onNodeClick, pulsingNode, flyToNode, onFlyToDone,
+  direction, maxDepth, onNodeClick, selectedUrl, pulsingNode, flyToNode, onFlyToDone,
   onContextAddNote, highlightedUrls,
 }) => {
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
@@ -65,6 +66,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
       const isHighlight = highlightedUrls ? highlightedUrls.has(url) : false;
       return {
         ...node,
+        selected: url === selectedUrl,
         data: {
           ...nd,
           nickname: diff?.nickname,
@@ -77,7 +79,7 @@ export const CrawlGraph: React.FC<CrawlGraphProps> = ({
         },
       };
     });
-  }, [layoutNodes, diffs, bookmarks, noteUrls, matchingUrls, pulsingNode, highlightedUrls]);
+  }, [layoutNodes, diffs, bookmarks, noteUrls, matchingUrls, pulsingNode, highlightedUrls, selectedUrl]);
 
   const enhancedEdges = useMemo(() => {
     return layoutEdges.map(edge => {
