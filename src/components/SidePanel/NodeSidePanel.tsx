@@ -150,17 +150,30 @@ const MetaTab: React.FC<{
           style={{ background: 'var(--bg-panel-secondary)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
         />
       </Field>
-      <button
-        onClick={() => onToggleBookmark(record.url)}
-        className="flex items-center gap-1 rounded px-2 py-1 text-[11px] transition-colors"
-        style={{
-          background: isBookmarked ? 'rgba(245, 197, 24, 0.15)' : 'var(--bg-panel-secondary)',
-          color: isBookmarked ? '#f5c518' : 'var(--color-text-secondary)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        {isBookmarked ? '★ Bookmarked' : '☆ Bookmark'}
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onToggleBookmark(record.url)}
+          className="flex items-center gap-1 rounded px-2 py-1 text-[11px] transition-colors"
+          style={{
+            background: isBookmarked ? 'rgba(245, 197, 24, 0.15)' : 'var(--bg-panel-secondary)',
+            color: isBookmarked ? '#f5c518' : 'var(--color-text-secondary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          {isBookmarked ? '★ Bookmarked' : '☆ Bookmark'}
+        </button>
+        <button
+          onClick={() => onGoToNode(record.url)}
+          className="flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold transition-colors hover:scale-105 active:scale-95"
+          style={{
+            background: 'var(--bg-panel-secondary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          ↗ Go to node
+        </button>
+      </div>
 
       <div className="flex flex-wrap gap-1.5 pt-2">
         <Chip label="Depth" value={String(record.depth)} />
